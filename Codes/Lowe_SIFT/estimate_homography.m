@@ -17,20 +17,45 @@ function [H, error] = estimate_homography(im1, im2, GT_homography)
     [~, descrips2, locs2] = sift('image2.pgm');
     % Match descriptors between the two images
     matchings = match('image1.pgm', 'image2.pgm');
+    if size(matchings, 2) > 1
+        [~, matchings] = max(matchings, [], 2);
+        matchings = matchings .* (max(matchings, [], 2) > 0);
+    end
+
     % Get matching points
     [loca1, loca2] = get_matching_pts(locs1, locs2, matchings);
+    % Make sure points are in the correct format for ransacfithomography
+    % The function expects points as [2 × numPoints] matrices
+    if size(loca1, 1) ~= 2
+        loca1 = loca1';
+    end
+    if size(loca2, 1) ~= 2
+        loca2 = loca2';
+    end
+    % Make sure we have only 2 rows (x, y coordinates)
+    if size(loca1, 1) > 2
+        loca1 = loca1(1:2, :);
+    end
+    if size(loca2, 1) > 2
+        loca2 = loca2(1:2, :);
+    end
     % Apply RANSAC to estimate homography
-    [H, inliers] = ransacfithomography(loca1', loca2', 0.01);
+    [H, inliers] = ransacfithomography(loca1, loca2, 0.01);
     % Compute error with respect to GT homography
     error = compute_homography_error(H, GT_homography, loca1, loca2, inliers);
 end
 function error = compute_homography_error(H, GT_homography, loca1, loca2, inliers)
+    % Adjust the function to work with points in [2 × numPoints] format
+    % Get inlier points
+    loca1_inliers = loca1(:, inliers);
+    % Add homogeneous coordinate
+    loca1_homogeneous = [loca1_inliers; ones(1, size(loca1_inliers, 2))];
     % Transform points using the estimated homography
-    loca1_transformed = H * [loca1(inliers, :) ones(length(inliers), 1)]';
-    loca1_transformed = loca1_transformed ./ loca1_transformed(3, :);
+    loca1_transformed = H * loca1_homogeneous;
+    loca1_transformed = loca1_transformed ./ repmat(loca1_transformed(3, :), 3, 1);
     % Transform points using the ground truth homography
-    loca1_GT_transformed = GT_homography * [loca1(inliers, :) ones(length(inliers), 1)]';
-    loca1_GT_transformed = loca1_GT_transformed ./ loca1_GT_transformed(3, :);
+    loca1_GT_transformed = GT_homography * loca1_homogeneous;
+    loca1_GT_transformed = loca1_GT_transformed ./ repmat(loca1_GT_transformed(3, :), 3, 1);
     % Compute the error as the average Euclidean distance between the transformed points
     error = mean(sqrt(sum((loca1_transformed(1:2, :) - loca1_GT_transformed(1:2, :)).^2, 1)));
 end

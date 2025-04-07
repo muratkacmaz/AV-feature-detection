@@ -17,6 +17,11 @@ for folder_idx = 1:length(sub_folders)
     image_files = dir(fullfile('../data_set', folder, '*.ppm'));
     gt_files = dir(fullfile('../data_set', folder, 'H*'));
 
+    if isempty(image_files)
+        warning('No .ppm files found in folder: %s', folder);
+        continue;
+    end
+
     % Read the first image
     im1 = imread(fullfile('../data_set', folder, image_files(1).name));
 
