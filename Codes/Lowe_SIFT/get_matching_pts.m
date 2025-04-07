@@ -1,30 +1,28 @@
-function [pts1, pts2] = get_matching_pts(locs1, locs2, matchings)
-    % This function extracts the matching points from SIFT locations and matching data
-    % Check the structure of matchings
-    if isstruct(matchings)
-        % Handle case where matchings is a struct with match info
-        numMatches = size(matchings, 1);
-        pts1 = zeros(numMatches, 2);
-        pts2 = zeros(numMatches, 2);
-        for i = 1:numMatches
-            idx1 = matchings(i).match(1);
-            idx2 = matchings(i).match(2);
-            pts1(i, :) = locs1(idx1, 1:2);
-            pts2(i, :) = locs2(idx2, 1:2);
-        end
-    elseif ismatrix(matchings)
-        % Handle case where matchings is a matrix
-        valid_matches = find(matchings > 0);
-        numMatches = length(valid_matches);
-        pts1 = zeros(numMatches, 2);
-        pts2 = zeros(numMatches, 2);
-        for i = 1:numMatches
-            idx1 = valid_matches(i);
-            idx2 = matchings(idx1);
-            pts1(i, :) = locs1(idx1, 1:2);
-            pts2(i, :) = locs2(idx2, 1:2);
-        end
-    else
-        error('Unexpected format for matchings variable');
+function [pts1 pts2] = get_matching_pts( loc1, loc2, matchings )
+%GET_MATCHING_PTS Summary of this function goes here
+%   Detailed explanation goes here
+
+%function that takes as input the locations of the keypoints found by SIFT
+%and the result of the matching process.
+%It returns two matrices of size 2XN
+%corresponding to (x,y) coordinates in the left and right images that were
+%matched and categorized as correct matchings
+pts1 = zeros(2, sum(matchings>0)) ;
+pts2 = zeros(2, sum(matchings>0)) ;
+
+counter = 0;
+for i = 1:size(matchings,2)
+    if matchings(i) > 0
+        counter = counter +1;
+        pts1(1,counter) = loc1(i,2);
+        pts1(2,counter) = loc1(i,1);
+        pts2(1,counter) = loc2(matchings(i),2);
+        pts2(2,counter) = loc2(matchings(i),1);
     end
 end
+
+
+
+
+end
+
