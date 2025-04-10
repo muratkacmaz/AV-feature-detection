@@ -22,6 +22,8 @@ imwrite(I2,'image2.pgm');
 	%%%% MISSING CODE HERE; compute matches based on SIFT
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+% SIFT matching
+[~, loca1, ~, loca2, matchings, ~] = match('image1.pgm', 'image2.pgm');    
 
 idx1 = find(matchings);
 idx2 = matchings(idx1);
@@ -33,6 +35,12 @@ loca2 = [loca2(idx2,2),loca2(idx2,1)];
 	%%%% MISSING CODE HERE; compute the Homography H, and the inliers
 	%%%%%%%%%%%%%%%%%%%%%%%%%%%
  
+
+
+
+
+% Transpose to match expected input of ransacfithomography (2 x N)
+[H, inliers] = ransacfithomography(loca2', loca1', 0.01);
 
 tform = maketform('projective',H');
 I21 = imtransform(I2,tform); 
